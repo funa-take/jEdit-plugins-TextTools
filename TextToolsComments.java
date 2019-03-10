@@ -52,6 +52,7 @@ public class TextToolsComments
 	{
 		JEditTextArea textArea = view.getTextArea();
 		JEditBuffer buffer = textArea.getBuffer();
+		boolean insertSpace = jEdit.getBooleanProperty("options.toggle-comment.insert-space");
 		try
 		{
 			if(!buffer.isEditable())
@@ -172,7 +173,7 @@ public class TextToolsComments
 					if(line.trim().startsWith(lineComment) && doUncomment)
 					{
 						buffer.remove(pos, lineComment.length());
-						if(Character.isWhitespace(buffer.getText(pos, 1).charAt(0)))
+						if(insertSpace && Character.isWhitespace(buffer.getText(pos, 1).charAt(0)))
 						{
 							buffer.remove(pos, 1);
 						}
@@ -183,7 +184,8 @@ public class TextToolsComments
 						// - start of line
 						if(jEdit.getBooleanProperty("options.toggle-comments.indentAtLineStart"))
 						{
-							buffer.insert(lineStart, lineComment + " ");
+							
+							buffer.insert(lineStart, lineComment + (insertSpace ? " " : ""));
 						}
 						// - leftmost indent of selected lines
 						else if(jEdit.getBooleanProperty("options.toggle-comments.indentAsBlock"))
@@ -193,12 +195,12 @@ public class TextToolsComments
 							Log.log(Log.DEBUG, TextToolsComments.class, "commenting line: "+lines[i]);
 							buffer.insert(lineStart + 
 								StandardUtilities.getOffsetOfVirtualColumn(seg, buffer.getTabSize(), leftmost, null), 
-								lineComment + (jEdit.getBooleanProperty("options.toggle-comment.insert-space") ? " " : ""));
+								lineComment + (insertSpace ? " " : ""));
 						}
 						// - or after all leading whitespace
 						else
 						{
-							buffer.insert(pos, lineComment + " ");
+							buffer.insert(pos, lineComment + (insertSpace ? " " : ""));
 						}
 					}
 				}
@@ -362,7 +364,8 @@ public class TextToolsComments
 	{
 		String commentStart = buffer.getContextSensitiveProperty(offset, "commentStart");
 		String commentEnd = buffer.getContextSensitiveProperty(offset, "commentEnd");
-
+		boolean insertSpace = jEdit.getBooleanProperty("options.toggle-comment.insert-space");
+		
 		if(isInRangeComment(buffer, offset))
 		{
 			String preceding = buffer.getText(0, offset);
@@ -373,7 +376,12 @@ public class TextToolsComments
 			{
 				lockBuffer(buffer);
 				buffer.remove(end, commentEnd.length());
+				int spaceStart = end - 1;
+				if (insertSpace && Character.isWhitespace(buffer.getText(spaceStart, 1).charAt(0))) buffer.remove(spaceStart, 1);
+				
 				buffer.remove(start, commentStart.length());
+				spaceStart = start;
+				if (insertSpace && Character.isWhitespace(buffer.getText(spaceStart, 1).charAt(0))) buffer.remove(spaceStart, 1);
 			}
 			finally
 			{
@@ -409,6 +417,7 @@ public class TextToolsComments
 		String commentStart = buffer.getContextSensitiveProperty(start, "commentStart");
 		String commentEnd = buffer.getContextSensitiveProperty(start, "commentEnd");
 		StringBuilder buf = new StringBuilder(buffer.getText(start, end - start));
+		boolean insertSpace = jEdit.getBooleanProperty("options.toggle-comment.insert-space");
 
 		// use a state machine to step through text and reverse commenting
 		final byte REMOVE_COMMENT_START = 0;
@@ -445,19 +454,24 @@ public class TextToolsComments
 				case REMOVE_COMMENT_START:
 					atStart = i == 0;
 					buf.delete(i, i + commentStart.length());
+					if (insertSpace && Character.isWhitespace(buf.charAt(i))) buf.deleteCharAt(i);
 					state = atStart ? LOOK_FOR_COMMENT_END : INSERT_COMMENT_END;
 					break;
 				case REMOVE_COMMENT_END:
 					atStart = i == 0;
 					buf.delete(i, i + commentEnd.length());
+					if (insertSpace && Character.isWhitespace(buf.charAt(i-1))) buf.deleteCharAt(--i);
 					state = atStart ? LOOK_FOR_COMMENT_START : INSERT_COMMENT_START;
 					break;
 				case INSERT_COMMENT_START:
 					buf.insert(i, commentStart);
 					i += commentStart.length();
+					if (insertSpace) buf.insert(i++, " ");
+					
 					state = LOOK_FOR_COMMENT_START;
 					break;
 				case INSERT_COMMENT_END:
+					if (insertSpace) buf.insert(i++, " ");
 					buf.insert(i, commentEnd);
 					i += commentEnd.length();
 					state = LOOK_FOR_COMMENT_END;
@@ -467,6 +481,7 @@ public class TextToolsComments
 					if(i == -1)
 					{
 						buf.append(commentStart);
+						if (insertSpace) buf.append(" ");
 					}
 					else
 					{
@@ -477,6 +492,7 @@ public class TextToolsComments
 					i = buf.indexOf(commentStart, i);
 					if(i == -1)
 					{
+						if (insertSpace) buf.append(" ");
 						buf.append(commentEnd);
 					}
 					else

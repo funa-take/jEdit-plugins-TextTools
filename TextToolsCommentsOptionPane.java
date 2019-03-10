@@ -63,7 +63,7 @@ public class TextToolsCommentsOptionPane extends AbstractOptionPane
 		addComponent(moveDown);
 		insertSpaceAfterComment = new JCheckBox(
 			jEdit.getProperty("options.toggle-comments.insert-space.title"),
-			jEdit.getBooleanProperty("options.insert-space"));
+			jEdit.getBooleanProperty("options.toggle-comment.insert-space"));
 		addComponent(insertSpaceAfterComment);
 		// line comment indenting options go in a group
 		indentAtLineStart = new JRadioButton(
