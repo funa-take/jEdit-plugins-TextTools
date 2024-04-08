@@ -173,7 +173,7 @@ public class TextToolsComments
 					if(line.trim().startsWith(lineComment) && doUncomment)
 					{
 						buffer.remove(pos, lineComment.length());
-						if(insertSpace && Character.isWhitespace(buffer.getText(pos, 1).charAt(0)))
+						if(insertSpace && isWhitespace(buffer.getText(pos, 1).charAt(0)))
 						{
 							buffer.remove(pos, 1);
 						}
@@ -377,11 +377,11 @@ public class TextToolsComments
 				lockBuffer(buffer);
 				buffer.remove(end, commentEnd.length());
 				int spaceStart = end - 1;
-				if (insertSpace && Character.isWhitespace(buffer.getText(spaceStart, 1).charAt(0))) buffer.remove(spaceStart, 1);
+				if (insertSpace && isWhitespace(buffer.getText(spaceStart, 1).charAt(0))) buffer.remove(spaceStart, 1);
 				
 				buffer.remove(start, commentStart.length());
 				spaceStart = start;
-				if (insertSpace && Character.isWhitespace(buffer.getText(spaceStart, 1).charAt(0))) buffer.remove(spaceStart, 1);
+				if (insertSpace && isWhitespace(buffer.getText(spaceStart, 1).charAt(0))) buffer.remove(spaceStart, 1);
 			}
 			finally
 			{
@@ -454,13 +454,13 @@ public class TextToolsComments
 				case REMOVE_COMMENT_START:
 					atStart = i == 0;
 					buf.delete(i, i + commentStart.length());
-					if (insertSpace && Character.isWhitespace(buf.charAt(i))) buf.deleteCharAt(i);
+					if (insertSpace && isWhitespace(buf.charAt(i))) buf.deleteCharAt(i);
 					state = atStart ? LOOK_FOR_COMMENT_END : INSERT_COMMENT_END;
 					break;
 				case REMOVE_COMMENT_END:
 					atStart = i == 0;
 					buf.delete(i, i + commentEnd.length());
-					if (insertSpace && Character.isWhitespace(buf.charAt(i-1))) buf.deleteCharAt(--i);
+					if (insertSpace && isWhitespace(buf.charAt(i-1))) buf.deleteCharAt(--i);
 					state = atStart ? LOOK_FOR_COMMENT_START : INSERT_COMMENT_START;
 					break;
 				case INSERT_COMMENT_START:
@@ -557,5 +557,11 @@ public class TextToolsComments
 		return buffer.getStringProperty("commentStart") != null &&
 			buffer.getStringProperty("commentEnd") != null;
 	} //}}}
+	
+	private static boolean isWhitespace(char c) {
+		if (c == '\n') return false;
+		if (c == '\r') return false;
+		return Character.isWhitespace(c);
+	}
 }
 
